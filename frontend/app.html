@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自建房变形监测系统</title>
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo"></div>
+                <span class="logo-text">自建房变形监测系统</span>
+            </div>
+            <div class="nav-links">
+                <a href="#analysis" class="nav-link active">位移分析</a>
+                <a href="#results" class="nav-link">分析结果</a>
+                <a href="#about" class="nav-link">关于系统</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="main-container">
+        <!-- 系统状态 -->
+        <section class="status-section">
+            <div class="status-cards">
+                <div class="status-card">
+                    <div class="status-info">
+                        <h3>模型状态</h3>
+                        <span id="model-status">检查中...</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-info">
+                        <h3>运行设备</h3>
+                        <span id="device-status">检测中...</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-info">
+                        <h3>系统版本</h3>
+                        <span id="version-status">v0.1 · 整理预览</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 分析模式选择 -->
+        <section class="engine-panel" id="analysis" aria-label="分析引擎与示例">
+                <div><label for="engine">分析引擎</label><select id="engine"><option value="superglue">SuperPoint + SuperGlue · 研究模型</option><option value="sift">SIFT · CPU 复现基线</option></select></div>
+                <button id="demo-btn" class="action-btn secondary">用合成示例试一试</button>
+                <p id="engine-note"></p>
+                <p class="method-note">输出单位为像素（px），尚未进行物理标定。相机移动、光照和匹配误差均可能影响结果。</p>
+            </section><div id="feedback" role="status" aria-live="polite" tabindex="-1" hidden></div>
+            <section class="analysis-tabs-section">
+            <div class="analysis-tabs">
+                <button class="analysis-tab active" data-tab="single">单次区域分析</button>
+                <button class="analysis-tab" data-tab="multi">时间序列分析</button>
+            </div>
+        </section>
+
+        <!-- 单次区域分析 -->
+        <section id="single-analysis" class="tab-content active">
+            <div class="upload-section">
+                <div class="section-header">
+                    <h2>双图像区域分析</h2>
+                    <p>上传两张自建房图像进行四区域配准分析</p>
+                </div>
+
+                <div class="upload-container">
+                    <!-- 参考图像上传 -->
+                    <div class="upload-box">
+                        <div class="upload-area" id="upload-area-1">
+                            <h3>参考图像</h3>
+                            <p>上传第一张房屋图像</p>
+                            <input type="file" id="image1" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden>
+                            <button class="upload-btn" onclick="document.getElementById('image1').click()">
+                                选择图像
+                            </button>
+                        </div>
+                        <div class="image-preview" id="preview-1">
+                            <img id="preview-img-1" src="" alt="参考图像预览">
+                            <span class="file-name" id="file-name-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- 目标图像上传 -->
+                    <div class="upload-box">
+                        <div class="upload-area" id="upload-area-2">
+                            <h3>目标图像</h3>
+                            <p>上传第二张房屋图像</p>
+                            <input type="file" id="image2" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden>
+                            <button class="upload-btn" onclick="document.getElementById('image2').click()">
+                                选择图像
+                            </button>
+                        </div>
+                        <div class="image-preview" id="preview-2">
+                            <img id="preview-img-2" src="" alt="目标图像预览">
+                            <span class="file-name" id="file-name-2"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分析按钮 -->
+                <div class="analyze-section">
+                    <button id="analyze-btn" class="analyze-btn" disabled>
+                        开始区域分析
+                    </button>
+                    <div class="loading-spinner" id="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>特征匹配中，请稍候...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 时间序列分析 -->
+        <section id="multi-analysis" class="tab-content">
+            <div class="multi-upload-section">
+                <div class="section-header">
+                    <h2>时间序列分析</h2>
+                    <p>上传基础图像和多个时间点的对比图像，分析位移变化趋势</p>
+                </div>
+
+                <!-- 步骤指示器 -->
+                <div class="upload-steps">
+                    <div class="step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">基础图像</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">对比图像</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">分析结果</div>
+                    </div>
+                </div>
+
+                <!-- 步骤1: 基础图像 -->
+                <div class="step-content active" data-step="1">
+                    <div class="upload-box">
+                        <div class="upload-area" id="multi-upload-base">
+                            <h3>基础参考图像</h3>
+                            <p>上传作为基准的房屋图像</p>
+                            <input type="file" id="base-image" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden>
+                            <button class="upload-btn" onclick="document.getElementById('base-image').click()">
+                                选择基础图像
+                            </button>
+                        </div>
+                        <div class="image-preview" id="preview-base">
+                            <img id="preview-img-base" src="" alt="基础图像预览">
+                            <span class="file-name" id="file-name-base"></span>
+                        </div>
+                    </div>
+                    <div class="analyze-section">
+                        <label class="date-label" for="base-date">基础图像拍摄日期 <input type="date" id="base-date" required></label><button id="next-step-1" class="analyze-btn" disabled>
+                            下一步
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤2: 对比图像 -->
+                <div class="step-content" data-step="2">
+                    <div class="upload-box">
+                        <div class="upload-area" id="multi-upload-comparison">
+                            <h3>对比图像上传</h3>
+                            <p>可一次性选择多张图像或分多次上传 <strong style="color: #e53e3e;">（必须填写拍摄日期）</strong></p>
+                            <p style="font-size: 0.9rem; color: #718096; margin: 0.5rem 0;">
+                                提示：按住 Ctrl 键可多选文件，支持上传最多20张图像
+                            </p>
+                            <input type="file" id="comparison-image" accept=".jpg,.jpeg,.png,.bmp,.tiff" hidden multiple>
+                            <button class="upload-btn" onclick="document.getElementById('comparison-image').click()">
+                                选择对比图像（可多选）
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 添加条件提示 -->
+                    <div class="requirements-panel">
+                        <h4>开始分析需要满足：</h4>
+                        <ul>
+                            <li id="base-image-requirement">未上传基础图像</li>
+                            <li id="images-requirement">至少一张对比图像</li>
+                            <li id="dates-requirement">所有图像填写日期</li>
+                        </ul>
+                        <div id="image-count" style="margin-top: 1rem; padding: 0.5rem; background: #edf2f7; text-align: center;">
+                            尚未上传对比图像
+                        </div>
+                    </div>
+
+                    <div class="comparison-images-container" id="comparison-images-list">
+                        <!-- 对比图像列表将在这里动态生成 -->
+                    </div>
+
+                    <div class="analyze-section">
+                        <button id="prev-step-2" class="action-btn secondary">
+                            上一步
+                        </button>
+                        <button id="next-step-2" class="analyze-btn" disabled>
+                            开始趋势分析
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤3: 分析中 -->
+                <div class="step-content" data-step="3">
+                    <div class="loading-spinner" id="multi-loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>时间序列分析中，请稍候...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 分析结果区域 -->
+        <section id="results" class="results-section" style="display: none;">
+            <div class="section-header">
+                <h2>分析结果</h2>
+                <p id="results-subtitle">基于四区域配准的位移分析结果</p>
+            </div>
+
+            <div class="results-container">
+                <!-- 核心指标卡片 -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h4>总匹配点数</h4>
+                            <div class="metric-value" id="matches-count">0</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card highlight">
+                        <div class="metric-info">
+                            <h4>平均位移</h4>
+                            <div class="metric-value" id="avg-displacement">0.00 px</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-info">
+                            <h4>位移范围</h4>
+                            <div class="metric-range">
+                                <span id="min-displacement">0.00</span>
+                                <span> - </span>
+                                <span id="max-displacement">0.00</span>
+                                <span> px</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 区域分析结果 -->
+                <div class="region-results" id="region-results">
+                    <!-- 区域结果将在这里动态生成 -->
+                </div>
+
+                <!-- 趋势预警板块 -->
+                <div class="trend-alert-section" id="trend-alert" style="display: none;">
+                    <div class="alert-header">
+                        <h3>像素位移趋势提示</h3>
+                        <p>检测到建筑物位移变化趋势</p>
+                    </div>
+                    <div class="alert-content" id="alert-content">
+                        <!-- 预警内容将在这里动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 趋势图表区域 -->
+                <div class="visualization-section" id="trend-chart-section" style="display: none;">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>位移变化趋势</h3>
+                            <p>按实际拍摄日期绘制；缺失测量点不连线</p>
+                        </div>
+                        <div class="chart-content">
+                            <div id="trend-svg"></div>
+                            <div class="image-placeholder" id="trend-placeholder">
+                                <p>趋势图加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详细数据表格 -->
+                <div id="sequence-table"></div><div id="matching-figure" hidden><h3>实际特征匹配</h3><img id="matching-image" alt="参考图像与目标图像的特征匹配连线" class="result-image"></div><div class="data-section">
+                    <h3>详细分析数据</h3>
+                    <div class="data-table">
+                        <div class="data-row">
+                            <span class="data-label">任务ID:</span>
+                            <span class="data-value" id="task-id">-</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">处理时间:</span>
+                            <span class="data-value" id="processing-time">-</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">位移标准差:</span>
+                            <span class="data-value" id="displacement-std">-</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">分析时间:</span>
+                            <span class="data-value" id="analysis-time">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button id="new-analysis-btn" class="action-btn secondary">
+                    新的分析
+                </button>
+                <button id="download-report-btn" class="action-btn primary">
+                    下载 JSON 报告
+                </button><button id="download-csv-btn" class="action-btn secondary">下载 CSV 数据</button>
+            </div>
+        </section>
+
+        <!-- 关于系统 -->
+        <section id="about" class="about-section">
+            <div class="section-header">
+                <h2>关于系统</h2>
+            </div>
+<p class="method-note">研究原型：未进行相机运动补偿、物理尺度标定或工程安全验证。趋势提示用于辅助实验分析。</p>
+            <div class="about-content">
+                <div class="tech-card">
+                    <h3>技术架构</h3>
+                    <ul>
+                        <li><strong>前端:</strong> HTML5 + CSS3 + JavaScript</li>
+                        <li><strong>后端:</strong> FastAPI + Python</li>
+                        <li><strong>AI模型:</strong> SuperPoint + SuperGlue</li>
+                        <li><strong>图像处理:</strong> OpenCV</li>
+                        <li><strong>深度学习:</strong> PyTorch</li>
+                    </ul>
+                </div>
+                <div class="tech-card">
+                    <h3>系统功能</h3>
+                    <ul>
+                        <li>四区域图像配准分析</li>
+                        <li>时间序列位移监测</li>
+                        <li>像素位移趋势提示</li>
+                        <li>多图像批量处理</li>
+                        <li>可视化结果展示</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 自建房变形监测系统. 所有权利保留.</p>
+            <p>图像配准与像素位移分析研究原型</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
