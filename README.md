@@ -91,7 +91,7 @@ python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-当前本机 Python 3.14 与全新 Python 3.12 环境各通过 11 项自动化测试；另完成桌面 / 390px 移动视口交互检查，以及一次本地 SuperGlue 权重实际推理。验证数据、已验证环境与限制见 [验证记录](docs/validation.md)。CI 配置尚未在 GitHub 运行。
+当前本机 Python 3.14 与全新 Python 3.12 环境各通过 11 项自动化测试；另完成桌面 / 390px 移动视口交互检查，以及一次本地 SuperGlue 权重实际推理。验证数据、已验证环境与限制见 [验证记录](docs/validation.md)。GitHub Actions 已在 Python 3.11、3.12、3.13 三种环境中通过同一组测试。
 
 ## 文档
 
